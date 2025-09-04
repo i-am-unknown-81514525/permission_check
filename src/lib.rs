@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::sync::LazyLock;
+use std::{cmp::min, sync::LazyLock};
 use syn::{
     LitInt, LitStr, Token,
     parse::{Parse, ParseStream},
@@ -8,7 +8,7 @@ use syn::{
 
 mod tokenizer {
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Specifier {
         ListSpecifier { specifier: ListSpecifier },
         Read,
@@ -21,7 +21,7 @@ mod tokenizer {
             Self::ListSpecifier { specifier: value }
         }
     }
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub enum ListSpecifier {
         Add,
         Remove,
@@ -29,7 +29,7 @@ mod tokenizer {
         ListAll,
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Field {
         Name { name: String },
         ID { id: i64 },
@@ -221,7 +221,7 @@ fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, Permissi
     return Ok(parse_result?);
 }
 
-struct PermissionItem {
+pub struct PermissionItem {
     perm: Vec<tokenizer::Field>,
 }
 
@@ -233,8 +233,28 @@ impl Clone for PermissionItem {
     }
 }
 
-struct PermissionGroup {
-    perms: Vec<PermissionItem>,
+impl From<Vec<tokenizer::Field>> for PermissionItem {
+    fn from(value: Vec<tokenizer::Field>) -> Self {
+        Self { perm: value }
+    }
+}
+
+pub struct PermissionGroup {
+    perms: Vec<PermissionItem>
+}
+
+impl From<Vec<PermissionItem>> for PermissionGroup {
+    fn from(value: Vec<PermissionItem>) -> Self {
+        Self {
+            perms: value
+        }
+    }
+}
+
+impl PermissionGroup {
+    pub fn add(&mut self, item: PermissionItem) -> () {
+        self.perms.push(item);
+    }
 }
 
 impl Clone for PermissionGroup {
@@ -243,4 +263,106 @@ impl Clone for PermissionGroup {
             perms: self.perms.iter().map(|i| (*i).clone()).collect(),
         }
     }
+}
+
+pub fn parse(permission: &String) -> Result<PermissionItem, PermissionParseError> {
+    Ok(parse_internal(permission)?.into())
+}
+
+pub fn check_one(require: PermissionItem, permission: PermissionItem) -> bool {
+    let mut idx_left = 0;
+    let mut idx_right = 0;
+    let size_left = require.perm.len();
+    let size_right = require.perm.len();
+    let mut match_left_triple_glob: bool = false;
+    let mut match_right_triple_glob: bool = false;
+    while (true) {
+        if (match_left_triple_glob && match_right_triple_glob) {
+            let unprocessed_left = size_left-idx_left;
+            let unprocessed_right = size_right-idx_right;
+            if (unprocessed_left==unprocessed_right) {
+                match_left_triple_glob = false;
+                match_right_triple_glob = false;
+            }
+            if (unprocessed_left > unprocessed_right) {
+                match_left_triple_glob = false;
+            }
+            if (unprocessed_right > unprocessed_left) {
+                match_right_triple_glob = false;
+            }
+        }
+        let field_required = require.perm[idx_left];
+        let field_permission = require.perm[idx_right];
+        if (match_left_triple_glob) {
+            if field_permission != tokenizer::Field::DoubleGlob && field_permission != tokenizer::Field::TripleGlob {
+                return false;
+            }
+        }
+        if !match_left_triple_glob {
+            idx_left += 1;
+        }
+        if !match_right_triple_glob {
+            idx_right += 1;
+        }
+        if (idx_left == size_left || idx_right == size_right) {
+            if (idx_left==size_left && idx_right != size_right) {
+                return false;
+            }
+            if (idx_left == size_left && idx_right == size_right) {
+                return true;
+            }
+            if (idx_left != size_left && idx_right == size_right) {
+                return true; // implicit *** applied for now, like org.1 perm mean org.1.user.2 is valid
+            }
+            break;
+        }
+        if (size_left-idx_left == size_right-idx_right) {
+            // [***].32
+            // [***].32
+            match_left_triple_glob = false;
+            match_right_triple_glob = false;
+        }
+        match (field_required, field_permission, match_right_triple_glob) {
+            (tokenizer::Field::TripleGlob, tokenizer::Field::TripleGlob, _) => {
+                match_left_triple_glob = true;
+                match_right_triple_glob = true;
+            },
+            (tokenizer::Field::TripleGlob, _, _) => {
+                match_left_triple_glob = true;
+            },
+            (_, tokenizer::Field::TripleGlob, _) => {
+                match_right_triple_glob = true;
+            },
+            (_, _, true) => {}
+            (_,tokenizer::Field::DoubleGlob, _ ) => {},
+            (tokenizer::Field::DoubleGlob, _, false) => {
+                return false;
+            }
+            (_, tokenizer::Field::Glob, _) => {},
+            (tokenizer::Field::Glob, _, false) => {
+                return false;
+            },
+            (tokenizer::Field::ID{id: lid}, tokenizer::Field::ID{id: rid}, false) => {
+                if lid != rid {return false};
+            },
+            (tokenizer::Field::Name { name: lname }, tokenizer::Field::Name { name: rname}, false) => {
+                if lname != rname {return false};
+            },
+            (tokenizer::Field::Specifier { specifier: tokenizer::Specifier::ListSpecifier { specifier: tokenizer::ListSpecifier::Add } }, tokenizer::Field::Specifier { specifier: tokenizer::Specifier::ListSpecifier { specifier: tokenizer::ListSpecifier::Add } }, _) => {},
+
+            
+            
+        }
+    };
+    if (match_left_triple_glob) {
+        return false;
+    }
+    if (match_right_triple_glob) {
+        return true;
+    }
+    return true;
+}
+
+pub fn check(require: PermissionItem, permissions: PermissionGroup) {
+
 }
