@@ -8,6 +8,7 @@ use syn::{
 
 mod tokenizer {
 
+    #[derive(Clone, Copy)]
     pub enum Specifier {
         ListSpecifier { specifier: ListSpecifier },
         Read,
@@ -20,7 +21,7 @@ mod tokenizer {
             Self::ListSpecifier { specifier: value }
         }
     }
-
+    #[derive(Clone, Copy)]
     pub enum ListSpecifier {
         Add,
         Remove,
@@ -28,6 +29,7 @@ mod tokenizer {
         ListAll,
     }
 
+    #[derive(Clone)]
     pub enum Field {
         Name { name: String },
         ID { id: i64 },
@@ -51,7 +53,6 @@ mod tokenizer {
         }
     }
 }
-
 
 mod token {
 
@@ -220,3 +221,26 @@ fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, Permissi
     return Ok(parse_result?);
 }
 
+struct PermissionItem {
+    perm: Vec<tokenizer::Field>,
+}
+
+impl Clone for PermissionItem {
+    fn clone(&self) -> Self {
+        Self {
+            perm: self.perm.iter().map(|i| (*i).clone()).collect(),
+        }
+    }
+}
+
+struct PermissionGroup {
+    perms: Vec<PermissionItem>,
+}
+
+impl Clone for PermissionGroup {
+    fn clone(&self) -> Self {
+        Self {
+            perms: self.perms.iter().map(|i| (*i).clone()).collect(),
+        }
+    }
+}
