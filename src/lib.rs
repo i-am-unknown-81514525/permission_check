@@ -51,6 +51,23 @@ mod tokenizer {
         }
     }
 }
+
+
+mod token {
+
+    syn::custom_keyword!(add);
+    syn::custom_keyword!(remove);
+    syn::custom_keyword!(read_one);
+    syn::custom_keyword!(list_all);
+    syn::custom_keyword!(read);
+    syn::custom_keyword!(write);
+    syn::custom_keyword!(assign);
+
+    syn::custom_punctuation!(SingleGlob, *);
+    syn::custom_punctuation!(DoubleGlob, **);
+    syn::custom_punctuation!(TripleGlob, ***);
+}
+
 // Part for Field exclude triple glob
 // ([a-zA-Z0-9]+|\*|\*\*)
 // (\*\*\*(\.([a-zA-Z0-9]+|\*|\*\*))*|(([a-zA-Z0-9]+|\*|\*\*)\.)*(\*\*\*|([a-zA-Z0-9]+|\*|\*\*))|(([a-zA-Z0-9]+|\*|\*\*)\.)+\*\*\*(\.([a-zA-Z0-9]+|\*|\*\*))+)
@@ -80,21 +97,6 @@ enum Permission {
     SingleGlob,
     ID(LitInt),
     Name(LitStr),
-}
-
-mod token {
-
-    syn::custom_keyword!(add);
-    syn::custom_keyword!(remove);
-    syn::custom_keyword!(read_one);
-    syn::custom_keyword!(list_all);
-    syn::custom_keyword!(read);
-    syn::custom_keyword!(write);
-    syn::custom_keyword!(assign);
-
-    syn::custom_punctuation!(SingleGlob, *);
-    syn::custom_punctuation!(DoubleGlob, **);
-    syn::custom_punctuation!(TripleGlob, ***);
 }
 
 impl Parse for Permission {
