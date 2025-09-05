@@ -23,35 +23,35 @@ fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
             match field {
                 Field::Name { name } => {
                     let name = syn::LitStr::new(&name, Span::call_site());
-                    quote! { ::permission_parser::Field::Name { name : #name}}
+                    quote! { ::permission_parser::tokenizer::Field::Name { name : (#name).to_string()}}
                 },
-                Field::ID { id } => quote! { ::permission_parser::Field::ID {id: #id} },
+                Field::ID { id } => quote! { ::permission_parser::tokenizer::Field::ID {id: #id} },
                 Field::Specifier { specifier } => {
                     let inner = enum_to_token(Token::Specifier(specifier));
-                    quote! {::permission_parser::Field::Specifier(#inner)}
+                    quote! {::permission_parser::tokenizer::Field::Specifier {specifier: #inner } }
                 },
-                Field::Glob => quote! { ::permission_parser::Field::Glob },
-                Field::DoubleGlob => quote! { ::permission_parser::Field::DoubleGlob },
-                Field::TripleGlob => quote! { ::permission_parser::Field::TripleGlob }
+                Field::Glob => quote! { ::permission_parser::tokenizer::Field::Glob },
+                Field::DoubleGlob => quote! { ::permission_parser::tokenizer::Field::DoubleGlob },
+                Field::TripleGlob => quote! { ::permission_parser::tokenizer::Field::TripleGlob }
             }
         },
         Token::Specifier(specifier) => {
             match specifier {
-                Specifier::Assign => quote! { ::permission_parser::Specifier::Assign },
-                Specifier::Read => quote! { ::permission_parser::Specifier::Read },
-                Specifier::Write => quote! { ::permission_parser::Specifier::Write },
+                Specifier::Assign => quote! { ::permission_parser::tokenizer::Specifier::Assign },
+                Specifier::Read => quote! { ::permission_parser::tokenizer::Specifier::Read },
+                Specifier::Write => quote! { ::permission_parser::tokenizer::Specifier::Write },
                 Specifier::ListSpecifier { specifier }  => {
                     let inner = enum_to_token(Token::ListSpecifier(specifier));
-                    quote! {::permission_parser::Specifier::ListSpecifier(#inner)}
+                    quote! {::permission_parser::tokenizer::Specifier::ListSpecifier {specifier: #inner} }
                 },
             }
         },
         Token::ListSpecifier(specifier) => {
             match specifier {
-                ListSpecifier::Add => quote! { ::permission_parser::ListSpecifier::Add },
-                ListSpecifier::Remove => quote! { ::permission_parser::ListSpecifier::Remove },
-                ListSpecifier::ReadOne => quote! { ::permission_parser::ListSpecifier::ReadOne },
-                ListSpecifier::ListAll => quote! { ::permission_parser::ListSpecifier::ListAll },
+                ListSpecifier::Add => quote! { ::permission_parser::tokenizer::ListSpecifier::Add },
+                ListSpecifier::Remove => quote! { ::permission_parser::tokenizer::ListSpecifier::Remove },
+                ListSpecifier::ReadOne => quote! { ::permission_parser::tokenizer::ListSpecifier::ReadOne },
+                ListSpecifier::ListAll => quote! { ::permission_parser::tokenizer::ListSpecifier::ListAll },
             }
         }
     }
