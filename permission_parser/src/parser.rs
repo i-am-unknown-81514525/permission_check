@@ -171,8 +171,10 @@ impl Parse for Permissions {
                     }
                     triple_glob_count += 1;
                 }
-                Permission::Name(_, _) => {}
-                Permission::ID(_, _) => {}
+                Permission::Name(_, _) | 
+                Permission::ID(_, _) | 
+                Permission::SingleGlob(_) | 
+                Permission::DoubleGlob(_) => {}
                 specifier @ _ => {
                     is_terminated = match specifier {
                         Permission::Add(span) | Permission::Remove(span) | Permission::ReadOne(span) | Permission::ListAll(span) => 

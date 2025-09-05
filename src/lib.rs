@@ -8,6 +8,19 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
     let mut match_left_triple_glob: bool = false;
     let mut match_right_triple_glob: bool = false;
     loop {
+        if idx_left == size_left || idx_right == size_right {
+            if idx_left == size_left && idx_right != size_right {
+                return false;
+            }
+            if idx_left == size_left && idx_right == size_right {
+                return true;
+            }
+            if idx_left != size_left && idx_right == size_right {
+                return true; // implicit *** applied for now, like org.1 perm mean org.1.user.2 is valid
+                // If [***] is used, that is given as the anchor point and therefore they would always have same remaining length
+            }
+            break;
+        }
         if match_left_triple_glob && match_right_triple_glob {
             let unprocessed_left = size_left - idx_left;
             let unprocessed_right = size_right - idx_right;
@@ -37,32 +50,17 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
         if !match_right_triple_glob {
             idx_right += 1;
         }
-        if idx_left == size_left || idx_right == size_right {
-            if idx_left == size_left && idx_right != size_right {
-                return false;
-            }
-            if idx_left == size_left && idx_right == size_right {
-                return true;
-            }
-            if idx_left != size_left && idx_right == size_right {
-                return true; // implicit *** applied for now, like org.1 perm mean org.1.user.2 is valid
-                // If [***] is used, that is given as the anchor point and therefore they would always have same remaining length
-            }
-            break;
-        }
-        if size_left - idx_left == size_right - idx_right {
-            // [***].32
-            // [***].32
-            match_left_triple_glob = false;
-            match_right_triple_glob = false;
-        }
         match (field_required, field_permission, match_right_triple_glob) {
             (tokenizer::Field::TripleGlob, tokenizer::Field::TripleGlob, _) => {
                 match_left_triple_glob = true;
                 match_right_triple_glob = true;
             }
-            (tokenizer::Field::TripleGlob, _, _) => {
+            (tokenizer::Field::TripleGlob, _, true) => {
                 match_left_triple_glob = true;
+            },
+            (tokenizer::Field::TripleGlob, tokenizer::Field::DoubleGlob, false) => {},
+            (tokenizer::Field::TripleGlob, _, false) => {
+                return false;
             }
             (_, tokenizer::Field::TripleGlob, _) => {
                 match_right_triple_glob = true;
@@ -183,6 +181,12 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
             (_, _, _) => {
                 return false;
             }
+        }
+        if size_left - idx_left == size_right - idx_right {
+            // [***].32
+            // [***].32
+            match_left_triple_glob = false;
+            match_right_triple_glob = false;
         }
     }
     if match_left_triple_glob {
