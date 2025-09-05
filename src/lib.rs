@@ -199,7 +199,7 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
 }
 
 pub fn check(require: &PermissionItem, permissions: &PermissionGroup) -> bool {
-    permissions.perms.iter().all(|p| check_one(require, p))
+    permissions.perms.iter().any(|p| check_one(require, p))
 }
 
 
