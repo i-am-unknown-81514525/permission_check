@@ -1,8 +1,8 @@
 use permission_parser::{parser, tokenizer::{Field, ListSpecifier, Specifier}};
-use proc_macro::{TokenStream};
+use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{format_ident, quote, ToTokens};
-use syn::{parse_macro_input, LitStr};
+use quote::{quote, ToTokens};
+use syn::parse_macro_input;
 
 #[derive(Clone)]
 enum Token {
