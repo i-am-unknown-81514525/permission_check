@@ -64,7 +64,7 @@ pub fn perm_parser(input: TokenStream) -> TokenStream {
     ).collect();
     let code_token: Vec<_> = input.iter().map(|token| enum_to_token((*token).clone()) ).collect();
     let expanded = quote! {
-        ::parser::PermissionItem {
+        ::permission_parser::parser::PermissionItem {
             perm: vec![
                 #(#code_token),*
             ]
