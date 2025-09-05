@@ -1,7 +1,7 @@
 
 use crate::{token, tokenizer};
 use regex::Regex;
-use std::{cmp::min, sync::LazyLock};
+use std::{sync::LazyLock};
 use syn::{
     LitInt, LitStr, Token,
     parse::{Parse, ParseStream},
@@ -95,7 +95,7 @@ impl Parse for Permission {
     }
 }
 
-struct Permissions {
+pub struct Permissions {
     identifier: Punctuated<Permission, Token![.]>,
 }
 
@@ -126,15 +126,8 @@ impl From<String> for PermissionParseError {
     }
 }
 
-fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
-    if !match_strings(permission) {
-        return Err(PermissionParseError::InvalidOutput(
-            "The given permission string does not match the required format".to_string(),
-        ));
-    }
-    let result: Permissions = syn::parse_str(&permission)?;
-
-    let parse_result: Result<Vec<tokenizer::Field>, PermissionParseError> = result
+pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
+    let parse_result: Result<Vec<tokenizer::Field>, PermissionParseError> = permissions
         .identifier
         .iter()
         .map(|permission| {
@@ -160,6 +153,17 @@ fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, Permissi
     return Ok(parse_result?);
 }
 
+fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
+    if !match_strings(permission) {
+        return Err(PermissionParseError::InvalidOutput(
+            "The given permission string does not match the required format".to_string(),
+        ));
+    }
+    let result: Permissions = syn::parse_str(&permission)?;
+
+    return token_converter(result);
+}
+
 pub struct PermissionItem {
     pub perm: Vec<tokenizer::Field>,
 }
@@ -179,7 +183,7 @@ impl From<Vec<tokenizer::Field>> for PermissionItem {
 }
 
 pub struct PermissionGroup {
-    perms: Vec<PermissionItem>,
+    pub perms: Vec<PermissionItem>,
 }
 
 impl From<Vec<PermissionItem>> for PermissionGroup {

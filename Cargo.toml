@@ -3,6 +3,11 @@ name = "permission_check"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = [
+    "permission_macro",
+    "permission_parser"
+]
+
 [dependencies]
-regex = "1.11.2"
-syn = { version = "2.0.106", features = ["full"] }
+permission_parser = {path = "permission_parser/"}

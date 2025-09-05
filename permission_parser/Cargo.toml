@@ -1,0 +1,8 @@
+[package]
+name = "permission_parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex = "1.11.2"
+syn = { version = "2.0.106", features = ["full"] }

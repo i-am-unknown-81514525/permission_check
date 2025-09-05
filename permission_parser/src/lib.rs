@@ -2,4 +2,4 @@ pub mod parser;
 pub mod token;
 pub mod tokenizer;
 
-pub use crate::parser::parser::*;
+pub use crate::parser::*;
