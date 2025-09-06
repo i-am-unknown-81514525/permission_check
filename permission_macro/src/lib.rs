@@ -41,6 +41,7 @@ fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
                 Specifier::Assign => quote! { ::permission_parser::tokenizer::Specifier::Assign },
                 Specifier::Read => quote! { ::permission_parser::tokenizer::Specifier::Read },
                 Specifier::Write => quote! { ::permission_parser::tokenizer::Specifier::Write },
+                Specifier::Enact => quote! { ::permission_parser::tokenizer::Specifier::Enact },
                 Specifier::ListSpecifier { specifier }  => {
                     let inner = enum_to_token(Token::ListSpecifier(specifier));
                     quote! {::permission_parser::tokenizer::Specifier::ListSpecifier {specifier: #inner} }

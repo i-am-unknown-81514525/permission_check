@@ -6,6 +6,7 @@ pub enum Specifier {
     Read,
     Write,
     Assign, // for T.assign, allow assign permission to anything at T
+    Enact
 }
 
 impl From<ListSpecifier> for Specifier {

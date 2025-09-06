@@ -33,6 +33,7 @@ pub enum Permission {
     Read(Span),
     Write(Span),
     Assign(Span),
+    Enact(Span),
     TripleGlob(Span),
     DoubleGlob(Span),
     SingleGlob(Span),
@@ -55,6 +56,7 @@ impl Permission {
             Permission::SingleGlob(span) => *span,
             Permission::ID(span, _) => *span,
             Permission::Name(span, _) => *span,
+            Permission::Enact(span) => *span
         }
     }
 
@@ -67,6 +69,7 @@ impl Permission {
             Permission::Read(_) => "read",
             Permission::Write(_) => "write",
             Permission::Assign(_) => "assign",
+            Permission::Enact(_) => "enact",
             Permission::TripleGlob(_) => "***",
             Permission::DoubleGlob(_) => "**",
             Permission::SingleGlob(_) => "*",
@@ -116,6 +119,10 @@ impl Parse for Permission {
         }
         if input.peek(token::assign) {
             let r = input.parse::<token::assign>()?;
+            return Ok(Permission::Assign(r.span()));
+        }
+        if input.peek(token::enact) {
+            let r = input.parse::<token::enact>()?;
             return Ok(Permission::Assign(r.span()));
         }
         if input.peek(LitInt) {
@@ -249,6 +256,7 @@ pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>
                 Permission::Read(_) => tokenizer::Specifier::Read.into(),
                 Permission::Write(_) => tokenizer::Specifier::Write.into(),
                 Permission::Assign(_) => tokenizer::Specifier::Assign.into(),
+                Permission::Enact(_) => tokenizer::Specifier::Enact.into(),
                 Permission::SingleGlob(_) => tokenizer::Field::Glob,
                 Permission::DoubleGlob(_) => tokenizer::Field::DoubleGlob,
                 Permission::TripleGlob(_) => tokenizer::Field::TripleGlob,
