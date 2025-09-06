@@ -9,5 +9,6 @@ fn test_generation() {
 
 #[test]
 fn test_other() {
-    perm_expr!(test.abc.1 | test.abc.2)(&perm_parser!(test.abc.1).into());
+    let result = perm_expr!(test.abc.1 | test.abc.2)(&perm_parser!(test.abc.1).into());
+    assert_eq!(result, true);
 }
