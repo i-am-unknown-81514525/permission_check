@@ -3,7 +3,7 @@ use crate::{token, tokenizer::{self}};
 use regex::Regex;
 use std::{sync::LazyLock};
 use syn::{
-    parse::{Parse, ParseStream}, punctuated::Punctuated, spanned::Spanned, Ident, LitInt, Token
+    parse::{Parse, ParseStream}, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
 };
 use proc_macro2::Span;
 
@@ -36,7 +36,7 @@ pub enum Permission {
     DoubleGlob(Span),
     SingleGlob(Span),
     ID(Span, LitInt),
-    Name(Span, Ident),
+    Name(Span, String),
 }
 
 impl Permission {
@@ -127,8 +127,28 @@ impl Parse for Permission {
                 return Ok(Permission::ID(value.span(), value));
             }
         }
-        let r: Ident = input.parse()?;
-        return Ok(Permission::Name(r.span(), r));
+        if input.peek(Lit) {
+            let value: Lit = input.parse()?;
+            return Ok(
+                Permission::Name(
+                    value.span(), 
+                    match value.clone() {
+                        Lit::Str(s) => s.value(),
+                        Lit::Bool(b) => b.value.to_string(),
+                        Lit::Float(_) => return Err(syn::Error::new(value.span(), "2 ID cannot appear consecutively")),
+                        Lit::Int(_) => unreachable!(),
+                        Lit::Byte(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of byte is not allowed")),
+                        Lit::Char(c) => c.value().to_string(),
+                        Lit::ByteStr(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of byte string is not allowed")),
+                        Lit::CStr(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of Cstr is not allowed")),
+                        Lit::Verbatim(v) => v.to_string(),
+                        _ => unreachable!()
+                    }
+                )
+            );
+        }
+        let value: Ident = input.parse()?;
+        return Ok(Permission::Name(value.span(), value.to_string()));
     }
 }
 
