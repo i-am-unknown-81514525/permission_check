@@ -215,7 +215,7 @@ pub fn perm_expr(input: TokenStream) -> TokenStream {
     let output = parse_macro_input!(input as Expr);
     let token_content = expr_to_token(output);
     let expanded = quote! {
-        (|var| #token_content)
+        ::permission_check::ComplexCheck::new(::std::boxed::Box::new(|var| #token_content))
     };
     expanded.into()
 }

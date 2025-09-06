@@ -11,6 +11,6 @@ fn test_generation() {
 
 #[test]
 fn test_other() {
-    let result = perm_expr!(test.abc.1 | test.abc.2)(&perm_parser!(test.abc.1).into());
+    let result = perm_expr!(test.abc.1 | test.abc.2).with_perm(perm_parser!(test.abc.1));
     assert_eq!(result, true);
 }

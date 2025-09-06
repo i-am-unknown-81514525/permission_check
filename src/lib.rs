@@ -203,3 +203,19 @@ pub fn check(require: &PermissionItem, permissions: &PermissionGroup) -> bool {
 }
 
 
+pub struct ComplexCheck {
+    check_fn: Box<dyn Fn(&PermissionGroup) -> bool>
+}
+
+impl ComplexCheck {
+    pub fn new(check_fn: Box<dyn Fn(&PermissionGroup) -> bool>) -> Self {
+        Self {
+            check_fn
+        }
+    }
+
+    pub fn with_perm(&self, group: impl Into::<PermissionGroup>) -> bool {
+        // Into::<Fn(&PermissionGroup) -> bool>::into(self.check_fn)(group.into())
+        (self.check_fn)(&group.into()) 
+    }
+}

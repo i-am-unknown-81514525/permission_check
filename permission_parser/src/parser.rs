@@ -312,6 +312,12 @@ impl From<Vec<PermissionItem>> for PermissionGroup {
     }
 }
 
+impl From<&PermissionGroup> for PermissionGroup {
+    fn from(value: &PermissionGroup) -> PermissionGroup {
+        value.clone()
+    }
+}
+
 impl PermissionGroup {
     pub fn add(&mut self, item: PermissionItem) -> () {
         self.perms.push(item);
