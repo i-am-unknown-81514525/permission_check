@@ -6,7 +6,7 @@ fn test_generation() {
     perm_parser!(a.b.cd.***.b.1974.add);
     perm_parser!(a.inner.*.test);
     perm_parser!(a.false);
-    perm_parser!(false.true);
+    perm_parser!(false.true.pub);
 }
 
 #[test]

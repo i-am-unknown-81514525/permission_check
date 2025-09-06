@@ -3,7 +3,7 @@ use crate::{token, tokenizer::{self}};
 use regex::Regex;
 use std::{sync::LazyLock};
 use syn::{
-    parse::{Parse, ParseStream}, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
+    ext::IdentExt, parse::{Parse, ParseStream}, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
 };
 use proc_macro2::Span;
 
@@ -24,6 +24,7 @@ fn match_number_sequence(number: &String) -> bool {
 }
 
 #[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Permission {
     Add(Span),
     Remove(Span),
@@ -147,12 +148,14 @@ impl Parse for Permission {
                 )
             );
         }
-        let value: Ident = input.parse()?;
+        // let value: Ident = input.parse()?;
+        let value = input.call(Ident::parse_any)?;
         return Ok(Permission::Name(value.span(), value.to_string()));
     }
 }
 
 #[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Permissions {
     pub identifier: Punctuated<Permission, Token![.]>,
 }
@@ -267,6 +270,7 @@ fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, Permissi
     return token_converter(result);
 }
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PermissionItem {
     pub perm: Vec<tokenizer::Field>,
 }
@@ -285,6 +289,7 @@ impl From<Vec<tokenizer::Field>> for PermissionItem {
     }
 }
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PermissionGroup {
     pub perms: Vec<PermissionItem>,
 }

@@ -1,5 +1,6 @@
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Specifier {
     ListSpecifier { specifier: ListSpecifier },
     Read,
@@ -13,6 +14,7 @@ impl From<ListSpecifier> for Specifier {
     }
 }
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ListSpecifier {
     Add,
     Remove,
@@ -21,6 +23,7 @@ pub enum ListSpecifier {
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Field {
     Name { name: String },
     ID { id: i64 },

@@ -5,6 +5,7 @@ use quote::{quote, ToTokens};
 use syn::{parenthesized, parse::{Parse, ParseStream}, parse_macro_input, token::Paren};
 
 #[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 enum Token {
     Field(Field),
     ListSpecifier(ListSpecifier),
@@ -95,7 +96,30 @@ impl Parse for Expr {
         if input.peek(Paren) {
             let content;
             parenthesized!(content in input);
-            return Ok(Self::Bracketed(content.parse()?));
+            let parsed: Expr = content.parse()?;
+            let expr = Box::new(parsed);
+            if input.peek(syn::Token![&]) || input.peek(syn::Token![&&]) {
+                if input.peek(syn::Token![&&]) {
+                    input.parse::<syn::Token![&&]>()?;
+                } else {
+                    input.parse::<syn::Token![&]>()?;
+                }
+                let right: Expr = input.parse()?;
+                return Ok(Self::And(expr, Box::new(right)));
+            } else if input.peek(syn::Token![|]) || input.peek(syn::Token![||]) {
+                if input.peek(syn::Token![||]) {
+                    input.parse::<syn::Token![||]>()?;
+                } else {
+                    input.parse::<syn::Token![|]>()?;
+                }
+                let right: Expr = input.parse()?;
+                return Ok(Self::Or(expr, Box::new(right)));
+            } else if input.peek(syn::Token![^])  {
+                input.parse::<syn::Token![^]>()?;
+                let right: Expr = input.parse()?;
+                return Ok(Self::Xor(expr, Box::new(right)));
+            }
+            return Ok(Self::Bracketed(expr));
         }
         if input.peek(syn::Token![!]) {
             input.parse::<syn::Token![!]>()?;
@@ -110,18 +134,18 @@ impl Parse for Expr {
                 )
             );
             if input.peek(syn::Token![&]) || input.peek(syn::Token![&&]) {
-                if input.peek(syn::Token![&]) {
-                    input.parse::<syn::Token![&]>()?;
-                } else {
+                if input.peek(syn::Token![&&]) {
                     input.parse::<syn::Token![&&]>()?;
+                } else {
+                    input.parse::<syn::Token![&]>()?;
                 }
                 let right: Expr = input.parse()?;
                 return Ok(Self::And(expr, Box::new(right)));
             } else if input.peek(syn::Token![|]) || input.peek(syn::Token![||]) {
-                if input.peek(syn::Token![|]) {
-                    input.parse::<syn::Token![|]>()?;
-                } else {
+                if input.peek(syn::Token![||]) {
                     input.parse::<syn::Token![||]>()?;
+                } else {
+                    input.parse::<syn::Token![|]>()?;
                 }
                 let right: Expr = input.parse()?;
                 return Ok(Self::Or(expr, Box::new(right)));
