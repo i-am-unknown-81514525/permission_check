@@ -1,4 +1,4 @@
-use permission_parser::{PermissionGroup, PermissionItem, tokenizer};
+use permission_parser::{tokenizer, ItemExpr, PermissionGroup, PermissionItem};
 
 pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool {
     let mut idx_left = 0;
@@ -202,6 +202,16 @@ pub fn check(require: &PermissionItem, permissions: &PermissionGroup) -> bool {
     permissions.perms.iter().any(|p| check_one(require, p))
 }
 
+fn check_expr(expr: &ItemExpr, permissions: &PermissionGroup) -> bool {
+    match expr {
+        ItemExpr::Permission(p) => check(p, permissions),
+        ItemExpr::And(l, r) => check_expr(l, permissions) && check_expr(r, permissions),
+        ItemExpr::Or(l, r) => check_expr(l, permissions) || check_expr(r, permissions),
+        ItemExpr::Not(e) => !check_expr(e, permissions),
+        ItemExpr::Xor(l, r) => check_expr(l, permissions) ^ check_expr(r, permissions),
+        ItemExpr::Bracketed(b) => check_expr(b, permissions)
+    }
+}
 
 pub struct ComplexCheck {
     check_fn: Box<dyn Fn(&PermissionGroup) -> bool>
@@ -217,5 +227,12 @@ impl ComplexCheck {
     pub fn with_perm(&self, group: impl Into::<PermissionGroup>) -> bool {
         // Into::<Fn(&PermissionGroup) -> bool>::into(self.check_fn)(group.into())
         (self.check_fn)(&group.into()) 
+    }
+
+    pub fn from(expr: &ItemExpr) -> Self {
+        let expr = expr.clone();
+        Self {
+            check_fn: Box::new(move |group| check_expr(&expr, group))
+        }
     }
 }

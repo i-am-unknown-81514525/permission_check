@@ -1,9 +1,9 @@
 
-use crate::{token, tokenizer::{self}};
+use crate::{token, tokenizer::{self}, Expr};
 use regex::Regex;
 use std::{sync::LazyLock};
 use syn::{
-    ext::IdentExt, parse::{Parse, ParseStream}, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
+    ext::IdentExt, parse::{Parse, ParseStream}, parse_str, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
 };
 use proc_macro2::Span;
 
@@ -24,7 +24,6 @@ fn match_number_sequence(number: &String) -> bool {
 }
 
 #[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Permission {
     Add(Span),
     Remove(Span),
@@ -162,7 +161,6 @@ impl Parse for Permission {
 }
 
 #[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Permissions {
     pub identifier: Punctuated<Permission, Token![.]>,
 }
@@ -342,6 +340,40 @@ impl Clone for PermissionGroup {
 
 pub fn parse(permission: &String) -> Result<PermissionItem, PermissionParseError> {
     Ok(parse_internal(permission)?.into())
+}
+
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum ItemExpr {
+    Permission(PermissionItem),
+    Not(Box<ItemExpr>),
+    And(Box<ItemExpr>, Box<ItemExpr>),
+    Or(Box<ItemExpr>, Box<ItemExpr>),
+    Xor(Box<ItemExpr>, Box<ItemExpr>),
+    Bracketed(Box<ItemExpr>)
+}
+
+impl ItemExpr {
+    pub fn from_expr(item: Expr) -> Result<Self, PermissionParseError> {
+        Ok(
+            match item {
+                Expr::Permission(p) => Self::Permission(
+                    PermissionItem {perm: token_converter(p)?}
+                ),
+                Expr::Not(n) => Self::Not(Box::new(Self::from_expr(*n)?)),
+                Expr::And(l, r) => Self::And(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
+                Expr::Or(l, r) => Self::Or(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
+                Expr::Xor(l, r) => Self::Xor(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
+                Expr::Bracketed(b) => Self::Bracketed(Box::new(Self::from_expr(*b)?))
+            }
+        )
+    }
+}
+
+
+pub fn expr_parse(expr: &String) -> Result<ItemExpr, PermissionParseError> {
+    let result: Expr = parse_str(expr)?;
+    return ItemExpr::from_expr(result);
 }
 
 #[test]

@@ -1,6 +1,7 @@
 use syn::{parenthesized, parse::{Parse, ParseStream}, token::Paren};
 use crate::{Permission, Permissions};
 
+#[derive(Clone)]
 pub enum Expr {
     Permission(Permissions),
     Not(Box<Expr>),
