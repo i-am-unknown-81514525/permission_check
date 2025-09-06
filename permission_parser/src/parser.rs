@@ -24,7 +24,7 @@ fn match_number_sequence(number: &String) -> bool {
 }
 
 #[derive(Clone)]
-enum Permission {
+pub enum Permission {
     Add(Span),
     Remove(Span),
     ReadOne(Span),
@@ -132,8 +132,9 @@ impl Parse for Permission {
     }
 }
 
+#[derive(Clone)]
 pub struct Permissions {
-    identifier: Punctuated<Permission, Token![.]>,
+    pub identifier: Punctuated<Permission, Token![.]>,
 }
 
 enum Terminator {
@@ -266,6 +267,18 @@ impl From<Vec<tokenizer::Field>> for PermissionItem {
 
 pub struct PermissionGroup {
     pub perms: Vec<PermissionItem>,
+}
+
+impl From<&PermissionItem> for PermissionGroup {
+    fn from(value: &PermissionItem) -> Self {
+        Self { perms: vec![value.clone()] }
+    }
+}
+
+impl From<PermissionItem> for PermissionGroup {
+    fn from(value: PermissionItem) -> Self {
+        Self { perms: vec![value] }
+    }
 }
 
 impl From<Vec<PermissionItem>> for PermissionGroup {
