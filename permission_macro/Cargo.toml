@@ -8,8 +8,8 @@ proc-macro = true
 
 [dependencies]
 syn = { version = "2.0.106", features = ["full"] }
-permission_parser = {path = "../permission_parser/"}
-permission_check = { path = "../" }
+permission_parser = {path = "../permission_parser/", version = "0.1.0"}
+permission_check = { path = "../", version = "0.1.0"}
 quote = "1.0"
 proc-macro2 = "1.0"
 

@@ -10,4 +10,4 @@ members = [
 ]
 
 [dependencies]
-permission_parser = {path = "permission_parser/"}
+permission_parser = {path = "permission_parser/", version = "0.1.0"}
