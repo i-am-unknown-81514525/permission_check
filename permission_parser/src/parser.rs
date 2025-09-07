@@ -1,11 +1,18 @@
-
-use crate::{token, tokenizer::{self}, Expr};
-use regex::Regex;
-use std::{sync::LazyLock};
-use syn::{
-    ext::IdentExt, parse::{Parse, ParseStream}, parse_str, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token, braced
+use crate::{
+    Expr, token,
+    tokenizer::{self},
 };
 use proc_macro2::Span;
+use regex::Regex;
+use std::sync::LazyLock;
+use syn::{
+    Ident, Lit, LitInt, Token, braced,
+    ext::IdentExt,
+    parse::{Parse, ParseStream},
+    parse_str,
+    punctuated::Punctuated,
+    spanned::Spanned,
+};
 
 // Part for Field exclude triple glob
 // ([a-zA-Z0-9]+|\*|\*\*)
@@ -38,7 +45,7 @@ pub enum Permission {
     SingleGlob(Span),
     ID(Span, LitInt),
     Name(Span, String),
-    VarName(Span, Ident)
+    VarName(Span, Ident),
 }
 
 impl Permission {
@@ -58,7 +65,7 @@ impl Permission {
             Permission::Name(span, _) => *span,
             Permission::Enact(span) => *span,
             Permission::VarName(span, _) => *span,
-        }
+        };
     }
 
     pub fn name(&self) -> &'static str {
@@ -76,8 +83,8 @@ impl Permission {
             Permission::SingleGlob(_) => "*",
             Permission::ID(_, _) => "custom_id",
             Permission::Name(_, _) => "custom_name",
-            Permission::VarName(_, _) => "{var}"
-        }
+            Permission::VarName(_, _) => "{var}",
+        };
     }
 }
 
@@ -145,23 +152,41 @@ impl Parse for Permission {
         }
         if input.peek(Lit) {
             let value: Lit = input.parse()?;
-            return Ok(
-                Permission::Name(
-                    value.span(), 
-                    match value.clone() {
-                        Lit::Str(s) => s.value(),
-                        Lit::Bool(b) => b.value.to_string(),
-                        Lit::Float(_) => return Err(syn::Error::new(value.span(), "2 ID cannot appear consecutively")),
-                        Lit::Int(_) => unreachable!(),
-                        Lit::Byte(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of byte is not allowed")),
-                        Lit::Char(c) => c.value().to_string(),
-                        Lit::ByteStr(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of byte string is not allowed")),
-                        Lit::CStr(_) => return Err(syn::Error::new(value.span(), "Invalid syntax: use of Cstr is not allowed")),
-                        Lit::Verbatim(v) => v.to_string(),
-                        _ => unreachable!()
+            return Ok(Permission::Name(
+                value.span(),
+                match value.clone() {
+                    Lit::Str(s) => s.value(),
+                    Lit::Bool(b) => b.value.to_string(),
+                    Lit::Float(_) => {
+                        return Err(syn::Error::new(
+                            value.span(),
+                            "2 ID cannot appear consecutively",
+                        ));
                     }
-                )
-            );
+                    Lit::Int(_) => unreachable!(),
+                    Lit::Byte(_) => {
+                        return Err(syn::Error::new(
+                            value.span(),
+                            "Invalid syntax: use of byte is not allowed",
+                        ));
+                    }
+                    Lit::Char(c) => c.value().to_string(),
+                    Lit::ByteStr(_) => {
+                        return Err(syn::Error::new(
+                            value.span(),
+                            "Invalid syntax: use of byte string is not allowed",
+                        ));
+                    }
+                    Lit::CStr(_) => {
+                        return Err(syn::Error::new(
+                            value.span(),
+                            "Invalid syntax: use of Cstr is not allowed",
+                        ));
+                    }
+                    Lit::Verbatim(v) => v.to_string(),
+                    _ => unreachable!(),
+                },
+            ));
         }
         // let value: Ident = input.parse()?;
         let value = input.call(Ident::parse_any)?;
@@ -176,7 +201,7 @@ pub struct Permissions {
 
 enum Terminator {
     ListSpecifier(Permission, Span),
-    Specifier(Permission, Span)
+    Specifier(Permission, Span),
 }
 
 impl Parse for Permissions {
@@ -187,37 +212,49 @@ impl Parse for Permissions {
         for item in &permissions {
             if is_terminated.is_some() {
                 return Err(match is_terminated {
-                    Some(Terminator::ListSpecifier(specifier, span)) => 
-                        syn::Error::new(
-                            *specifier.span().join(span).get_or_insert(specifier.span()), 
-                            format!("Cannot use further define the permission after using list specifier (`{}`)", specifier.name()
-                        )
+                    Some(Terminator::ListSpecifier(specifier, span)) => syn::Error::new(
+                        *specifier.span().join(span).get_or_insert(specifier.span()),
+                        format!(
+                            "Cannot use further define the permission after using list specifier (`{}`)",
+                            specifier.name()
+                        ),
                     ),
-                    Some(Terminator::Specifier(specifier, span, )) => 
-                        syn::Error::new(
-                            *specifier.span().join(span).get_or_insert(specifier.span()), 
-                            format!("Cannot use further define the permission after using specifier (`{}`)", specifier.name()
-                        )
+                    Some(Terminator::Specifier(specifier, span)) => syn::Error::new(
+                        *specifier.span().join(span).get_or_insert(specifier.span()),
+                        format!(
+                            "Cannot use further define the permission after using specifier (`{}`)",
+                            specifier.name()
+                        ),
                     ),
-                    None => unreachable!()
-                })
+                    None => unreachable!(),
+                });
             }
             match item {
                 Permission::TripleGlob(span) => {
                     if triple_glob_count > 0 {
-                        return Err(syn::Error::new(*span, "Cannot use triple glob more than once in a permission"));
+                        return Err(syn::Error::new(
+                            *span,
+                            "Cannot use triple glob more than once in a permission",
+                        ));
                     }
                     triple_glob_count += 1;
                 }
-                Permission::Name(_, _) | 
-                Permission::ID(_, _) | 
-                Permission::SingleGlob(_) | 
-                Permission::DoubleGlob(_) => {}
+                Permission::Name(_, _)
+                | Permission::ID(_, _)
+                | Permission::SingleGlob(_)
+                | Permission::DoubleGlob(_) => {}
                 specifier @ _ => {
                     is_terminated = match specifier {
-                        Permission::Add(span) | Permission::Remove(span) | Permission::ReadOne(span) | Permission::ListAll(span) => 
-                            Some(Terminator::ListSpecifier((*specifier).clone(), *span)),
-                        _ => Some(Terminator::Specifier((*specifier).clone(), specifier.span()))
+                        Permission::Add(span)
+                        | Permission::Remove(span)
+                        | Permission::ReadOne(span)
+                        | Permission::ListAll(span) => {
+                            Some(Terminator::ListSpecifier((*specifier).clone(), *span))
+                        }
+                        _ => Some(Terminator::Specifier(
+                            (*specifier).clone(),
+                            specifier.span(),
+                        )),
                     }
                 }
             }
@@ -246,7 +283,9 @@ impl From<String> for PermissionParseError {
     }
 }
 
-pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
+pub fn token_converter(
+    permissions: Permissions,
+) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
     let parse_result: Result<Vec<tokenizer::Field>, PermissionParseError> = permissions
         .identifier
         .iter()
@@ -255,7 +294,9 @@ pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>
                 Permission::ID(_, i) => tokenizer::Field::ID {
                     id: i.base10_parse::<u64>()?,
                 },
-                Permission::Name(_, name) => tokenizer::Field::Name { name: name.to_string() },
+                Permission::Name(_, name) => tokenizer::Field::Name {
+                    name: name.to_string(),
+                },
                 Permission::Add(_) => tokenizer::ListSpecifier::Add.into(),
                 Permission::Remove(_) => tokenizer::ListSpecifier::Remove.into(),
                 Permission::ReadOne(_) => tokenizer::ListSpecifier::ReadOne.into(),
@@ -267,7 +308,7 @@ pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>
                 Permission::SingleGlob(_) => tokenizer::Field::Glob,
                 Permission::DoubleGlob(_) => tokenizer::Field::DoubleGlob,
                 Permission::TripleGlob(_) => tokenizer::Field::TripleGlob,
-                Permission::VarName(span, ident) => tokenizer::Field::VarKind(*span, ident.clone())
+                Permission::VarName(span, ident) => tokenizer::Field::VarKind(*span, ident.clone()),
             })
         })
         .collect();
@@ -307,9 +348,12 @@ impl From<Vec<tokenizer::Field>> for PermissionItem {
 
 impl ToString for PermissionItem {
     fn to_string(&self) -> String {
-        return self.perm.iter().map(|field| {
-            field.to_string()
-        }).collect::<Vec<String>>().join(".");
+        return self
+            .perm
+            .iter()
+            .map(|field| field.to_string())
+            .collect::<Vec<String>>()
+            .join(".");
     }
 }
 
@@ -320,7 +364,9 @@ pub struct PermissionGroup {
 
 impl From<&PermissionItem> for PermissionGroup {
     fn from(value: &PermissionItem) -> Self {
-        Self { perms: vec![value.clone()] }
+        Self {
+            perms: vec![value.clone()],
+        }
     }
 }
 
@@ -357,7 +403,16 @@ impl Clone for PermissionGroup {
 }
 
 pub fn parse(permission: &String) -> Result<PermissionItem, PermissionParseError> {
-    Ok(parse_internal(permission)?.into())
+    Ok(parse_internal(permission)?
+        .iter()
+        .map(|field| match field {
+            tokenizer::Field::VarKind(_, _) => Err(PermissionParseError::InvalidOutput(
+                "Cannot use variable encapsulation when parsing in string form".to_string(),
+            )),
+            field @ _ => Ok(field.clone()),
+        })
+        .collect::<Result<Vec<tokenizer::Field>, PermissionParseError>>()?
+        .into())
 }
 
 #[derive(Clone)]
@@ -368,26 +423,44 @@ pub enum ItemExpr {
     And(Box<ItemExpr>, Box<ItemExpr>),
     Or(Box<ItemExpr>, Box<ItemExpr>),
     Xor(Box<ItemExpr>, Box<ItemExpr>),
-    Bracketed(Box<ItemExpr>)
+    Bracketed(Box<ItemExpr>),
 }
 
 impl ItemExpr {
     pub fn from_expr(item: Expr) -> Result<Self, PermissionParseError> {
-        Ok(
-            match item {
-                Expr::Permission(p) => Self::Permission(
-                    PermissionItem {perm: token_converter(p)?}
-                ),
-                Expr::Not(n) => Self::Not(Box::new(Self::from_expr(*n)?)),
-                Expr::And(l, r) => Self::And(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
-                Expr::Or(l, r) => Self::Or(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
-                Expr::Xor(l, r) => Self::Xor(Box::new(Self::from_expr(*l)?), Box::new(Self::from_expr(*r)?)),
-                Expr::Bracketed(b) => Self::Bracketed(Box::new(Self::from_expr(*b)?))
-            }
-        )
+        Ok(match item {
+            Expr::Permission(p) => Self::Permission(PermissionItem {
+                perm: token_converter(p)?
+                    .iter()
+                    .map(|field| match field {
+                        tokenizer::Field::VarKind(_, _) => {
+                            Err(PermissionParseError::InvalidOutput(
+                                "Cannot use variable encapsulation when parsing in string form"
+                                    .to_string(),
+                            ))
+                        }
+                        field @ _ => Ok(field.clone()),
+                    })
+                    .collect::<Result<Vec<tokenizer::Field>, PermissionParseError>>()?
+                    .into(),
+            }),
+            Expr::Not(n) => Self::Not(Box::new(Self::from_expr(*n)?)),
+            Expr::And(l, r) => Self::And(
+                Box::new(Self::from_expr(*l)?),
+                Box::new(Self::from_expr(*r)?),
+            ),
+            Expr::Or(l, r) => Self::Or(
+                Box::new(Self::from_expr(*l)?),
+                Box::new(Self::from_expr(*r)?),
+            ),
+            Expr::Xor(l, r) => Self::Xor(
+                Box::new(Self::from_expr(*l)?),
+                Box::new(Self::from_expr(*r)?),
+            ),
+            Expr::Bracketed(b) => Self::Bracketed(Box::new(Self::from_expr(*b)?)),
+        })
     }
 }
-
 
 pub fn expr_parse(expr: &String) -> Result<ItemExpr, PermissionParseError> {
     let result: Expr = parse_str(expr)?;

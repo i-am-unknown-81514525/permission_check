@@ -1,15 +1,18 @@
-use permission_parser::{parser, tokenizer::{Field, ListSpecifier, Specifier}, Permissions, Expr};
-use proc_macro2::{Span};
-use proc_macro::{TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
-use syn::{parse_macro_input};
+use permission_parser::{
+    Expr, Permissions, parser,
+    tokenizer::{Field, ListSpecifier, Specifier},
+};
+use proc_macro::TokenStream;
+use proc_macro2::Span;
+use quote::{ToTokens, quote, quote_spanned};
+use syn::parse_macro_input;
 
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 enum Token {
     Field(Field),
     ListSpecifier(ListSpecifier),
-    Specifier(Specifier)
+    Specifier(Specifier),
 }
 
 impl From<Field> for Token {
@@ -20,65 +23,71 @@ impl From<Field> for Token {
 
 fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
     match parsed_enum {
-        Token::Field(field) => {
-            match field {
-                Field::Name { name } => {
-                    let name = syn::LitStr::new(&name, Span::call_site());
-                    quote! { ::permission_parser::tokenizer::Field::Name { name : (#name).to_string()}}
-                },
-                Field::ID { id } => quote! { ::permission_parser::tokenizer::Field::ID {id: #id} },
-                Field::Specifier { specifier } => {
-                    let inner = enum_to_token(Token::Specifier(specifier));
-                    quote! {::permission_parser::tokenizer::Field::Specifier {specifier: #inner } }
-                },
-                Field::Glob => quote! { ::permission_parser::tokenizer::Field::Glob },
-                Field::DoubleGlob => quote! { ::permission_parser::tokenizer::Field::DoubleGlob },
-                Field::TripleGlob => quote! { ::permission_parser::tokenizer::Field::TripleGlob },
-                Field::VarKind(span, ident) => {
-                    quote_spanned! {
-                        span => 
-                        {
-                            #[inline(always)]
-                            fn converter<T: ::std::string::ToString>(v: &T) -> ::permission_parser::tokenizer::Field {
-                                ::permission_parser::tokenizer::Field::Name {name: v.to_string()}
-                            }
-
-                            converter(&#ident)
+        Token::Field(field) => match field {
+            Field::Name { name } => {
+                let name = syn::LitStr::new(&name, Span::call_site());
+                quote! { ::permission_parser::tokenizer::Field::Name { name : (#name).to_string()}}
+            }
+            Field::ID { id } => quote! { ::permission_parser::tokenizer::Field::ID {id: #id} },
+            Field::Specifier { specifier } => {
+                let inner = enum_to_token(Token::Specifier(specifier));
+                quote! {::permission_parser::tokenizer::Field::Specifier {specifier: #inner } }
+            }
+            Field::Glob => quote! { ::permission_parser::tokenizer::Field::Glob },
+            Field::DoubleGlob => quote! { ::permission_parser::tokenizer::Field::DoubleGlob },
+            Field::TripleGlob => quote! { ::permission_parser::tokenizer::Field::TripleGlob },
+            Field::VarKind(span, ident) => {
+                quote_spanned! {
+                    span =>
+                    {
+                        #[inline(always)]
+                        fn converter<T: ::std::string::ToString>(v: &T) -> ::permission_parser::tokenizer::Field {
+                            ::permission_parser::tokenizer::Field::Name {name: v.to_string()}
                         }
+
+                        converter(&#ident)
                     }
                 }
             }
         },
-        Token::Specifier(specifier) => {
-            match specifier {
-                Specifier::Assign => quote! { ::permission_parser::tokenizer::Specifier::Assign },
-                Specifier::Read => quote! { ::permission_parser::tokenizer::Specifier::Read },
-                Specifier::Write => quote! { ::permission_parser::tokenizer::Specifier::Write },
-                Specifier::Enact => quote! { ::permission_parser::tokenizer::Specifier::Enact },
-                Specifier::ListSpecifier { specifier }  => {
-                    let inner = enum_to_token(Token::ListSpecifier(specifier));
-                    quote! {::permission_parser::tokenizer::Specifier::ListSpecifier {specifier: #inner} }
-                },
+        Token::Specifier(specifier) => match specifier {
+            Specifier::Assign => quote! { ::permission_parser::tokenizer::Specifier::Assign },
+            Specifier::Read => quote! { ::permission_parser::tokenizer::Specifier::Read },
+            Specifier::Write => quote! { ::permission_parser::tokenizer::Specifier::Write },
+            Specifier::Enact => quote! { ::permission_parser::tokenizer::Specifier::Enact },
+            Specifier::ListSpecifier { specifier } => {
+                let inner = enum_to_token(Token::ListSpecifier(specifier));
+                quote! {::permission_parser::tokenizer::Specifier::ListSpecifier {specifier: #inner} }
             }
         },
-        Token::ListSpecifier(specifier) => {
-            match specifier {
-                ListSpecifier::Add => quote! { ::permission_parser::tokenizer::ListSpecifier::Add },
-                ListSpecifier::Remove => quote! { ::permission_parser::tokenizer::ListSpecifier::Remove },
-                ListSpecifier::ReadOne => quote! { ::permission_parser::tokenizer::ListSpecifier::ReadOne },
-                ListSpecifier::ListAll => quote! { ::permission_parser::tokenizer::ListSpecifier::ListAll },
+        Token::ListSpecifier(specifier) => match specifier {
+            ListSpecifier::Add => quote! { ::permission_parser::tokenizer::ListSpecifier::Add },
+            ListSpecifier::Remove => {
+                quote! { ::permission_parser::tokenizer::ListSpecifier::Remove }
             }
-        }
+            ListSpecifier::ReadOne => {
+                quote! { ::permission_parser::tokenizer::ListSpecifier::ReadOne }
+            }
+            ListSpecifier::ListAll => {
+                quote! { ::permission_parser::tokenizer::ListSpecifier::ListAll }
+            }
+        },
     }
 }
 
 fn to_internal_token(permissions: &Permissions) -> Vec<Token> {
-    parser::token_converter(permissions.clone()).unwrap().iter().map(|x| (*x).clone().into()
-    ).collect()
+    parser::token_converter(permissions.clone())
+        .unwrap()
+        .iter()
+        .map(|x| (*x).clone().into())
+        .collect()
 }
 
 fn perm_reconstructor(input: Vec<Token>) -> impl ToTokens {
-    let code_token: Vec<_> = input.iter().map(|token| enum_to_token((*token).clone()) ).collect();
+    let code_token: Vec<_> = input
+        .iter()
+        .map(|token| enum_to_token((*token).clone()))
+        .collect();
     quote! {
         ::permission_parser::parser::PermissionItem {
             perm: vec![
@@ -98,45 +107,44 @@ pub fn perm_parser(input: TokenStream) -> TokenStream {
 fn expr_to_token(expr: Expr) -> impl ToTokens {
     match expr {
         Expr::Permission(permissions) => {
-
             let tokens = perm_reconstructor(to_internal_token(&permissions));
             quote! {
                 ::permission_check::check(&#tokens, var)
             }
-        },
+        }
         Expr::And(left, right) => {
             let left = expr_to_token(*left);
             let right = expr_to_token(*right);
             quote! {
                 (#left && #right)
             }
-        },
+        }
         Expr::Or(left, right) => {
             let left = expr_to_token(*left);
             let right = expr_to_token(*right);
             quote! {
                 (#left || #right)
             }
-        },
+        }
         Expr::Xor(left, right) => {
             let left = expr_to_token(*left);
             let right = expr_to_token(*right);
             quote! {
                 (#left ^ #right)
             }
-        },
+        }
         Expr::Not(item) => {
             let item = expr_to_token(*item);
             quote! {
                 (!(#item))
             }
-        },
+        }
         Expr::Bracketed(item) => {
             let item = expr_to_token(*item);
             quote! {
                 (#item)
             }
-        },
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 use permission_check::check_one;
-use permission_parser::{parse};
+use permission_parser::parse;
 
 #[test]
 fn require_same() {

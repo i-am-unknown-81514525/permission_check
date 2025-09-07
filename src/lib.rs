@@ -1,4 +1,4 @@
-use permission_parser::{tokenizer, ItemExpr, PermissionGroup, PermissionItem};
+use permission_parser::{ItemExpr, PermissionGroup, PermissionItem, tokenizer};
 
 pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool {
     let mut idx_left = 0;
@@ -58,8 +58,8 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
             }
             (tokenizer::Field::TripleGlob, _, true) => {
                 match_left_triple_glob = true;
-            },
-            (tokenizer::Field::TripleGlob, tokenizer::Field::DoubleGlob, false) => {},
+            }
+            (tokenizer::Field::TripleGlob, tokenizer::Field::DoubleGlob, false) => {}
             (tokenizer::Field::TripleGlob, _, false) => {
                 return false;
             }
@@ -210,30 +210,28 @@ fn check_expr(expr: &ItemExpr, permissions: &PermissionGroup) -> bool {
         ItemExpr::Or(l, r) => check_expr(l, permissions) || check_expr(r, permissions),
         ItemExpr::Not(e) => !check_expr(e, permissions),
         ItemExpr::Xor(l, r) => check_expr(l, permissions) ^ check_expr(r, permissions),
-        ItemExpr::Bracketed(b) => check_expr(b, permissions)
+        ItemExpr::Bracketed(b) => check_expr(b, permissions),
     }
 }
 
 pub struct ComplexCheck {
-    check_fn: Box<dyn Fn(&PermissionGroup) -> bool>
+    check_fn: Box<dyn Fn(&PermissionGroup) -> bool>,
 }
 
 impl ComplexCheck {
     pub fn new(check_fn: Box<dyn Fn(&PermissionGroup) -> bool>) -> Self {
-        Self {
-            check_fn
-        }
+        Self { check_fn }
     }
 
-    pub fn with_perm(&self, group: impl Into::<PermissionGroup>) -> bool {
+    pub fn with_perm(&self, group: impl Into<PermissionGroup>) -> bool {
         // Into::<Fn(&PermissionGroup) -> bool>::into(self.check_fn)(group.into())
-        (self.check_fn)(&group.into()) 
+        (self.check_fn)(&group.into())
     }
 
     pub fn from(expr: &ItemExpr) -> Self {
         let expr = expr.clone();
         Self {
-            check_fn: Box::new(move |group| check_expr(&expr, group))
+            check_fn: Box::new(move |group| check_expr(&expr, group)),
         }
     }
 }

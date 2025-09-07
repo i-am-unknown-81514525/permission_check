@@ -1,5 +1,4 @@
-use permission_macro::{perm_parser, perm_expr};
-
+use permission_macro::{perm_expr, perm_parser};
 
 #[test]
 fn always_false() {
@@ -28,11 +27,50 @@ fn test_1() {
     assert_eq!(checker.with_perm(perm_parser!(*)), true);
     assert_eq!(checker.with_perm(perm_parser!(org.1047)), true);
     assert_eq!(checker.with_perm(perm_parser!(org.1048)), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.243.read)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.243.read), perm_parser!(org.1047.user.243.write)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.read)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.read_one)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.assign)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.role.owner), perm_parser!(user.blacklist.enact)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.role.owner), perm_parser!(user.blacklist.***)]), true);
+    assert_eq!(
+        checker.with_perm(vec![perm_parser!(org.1047.user.243.read)]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.243.read),
+            perm_parser!(org.1047.user.243.write)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.read)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.read_one)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.assign)
+        ]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.role.owner),
+            perm_parser!(user.blacklist.enact)
+        ]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.role.owner),
+            perm_parser!(user.blacklist.***)
+        ]),
+        true
+    );
 }
