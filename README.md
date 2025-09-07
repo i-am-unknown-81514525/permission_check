@@ -126,3 +126,8 @@ fn test_1() {
 [permission_parser](https://crates.io/crates/permission_parser)
 
 [permission_macro](https://crates.io/crates/permission_macro)
+
+
+### Video demo
+
+https://github.com/user-attachments/assets/ef21806e-9803-47a6-8e62-3a334087049a
