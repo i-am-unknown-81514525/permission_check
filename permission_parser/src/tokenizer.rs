@@ -1,3 +1,5 @@
+use syn::Ident;
+use proc_macro2::Span;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -46,15 +48,16 @@ impl ToString for ListSpecifier {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Field {
     Name { name: String },
-    ID { id: i64 },
+    ID { id: u64 },
     Specifier { specifier: Specifier },
     Glob,       // Qualify for Name, ID
     DoubleGlob, // Qualify for Name, ID and Specifier
     TripleGlob, // Qualify for Name, ID and Specifier for any length (can only appear once)
+    VarKind(Span, Ident), 
 }
 
 impl From<ListSpecifier> for Field {
@@ -73,13 +76,14 @@ impl From<Specifier> for Field {
 
 impl ToString for Field {
     fn to_string(&self) -> String {
-        match self {
+        match self {    
             Field::Name { name } => name.clone(),
             Field::ID { id } => id.to_string(),
             Field::Specifier { specifier } => specifier.to_string(),
             Field::Glob => "*".to_string(),
             Field::DoubleGlob => "**".to_string(),
-            Field::TripleGlob => "***".to_string()
+            Field::TripleGlob => "***".to_string(),
+            Field::VarKind(_, ident) => format!("{{{}}}", ident.to_string())
         }
     }
 }

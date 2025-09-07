@@ -1,7 +1,7 @@
 use permission_parser::{parser, tokenizer::{Field, ListSpecifier, Specifier}, Permissions, Expr};
 use proc_macro2::{Span};
 use proc_macro::{TokenStream};
-use quote::{quote, ToTokens};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{parse_macro_input};
 
 #[derive(Clone)]
@@ -33,7 +33,19 @@ fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
                 },
                 Field::Glob => quote! { ::permission_parser::tokenizer::Field::Glob },
                 Field::DoubleGlob => quote! { ::permission_parser::tokenizer::Field::DoubleGlob },
-                Field::TripleGlob => quote! { ::permission_parser::tokenizer::Field::TripleGlob }
+                Field::TripleGlob => quote! { ::permission_parser::tokenizer::Field::TripleGlob },
+                Field::VarKind(span, ident) => {
+                    quote_spanned! {
+                        span => 
+                        {
+                            fn converter<T: ::std::string::ToString>(v: &T) -> ::permission_parser::tokenizer::Field {
+                                ::permission_parser::tokenizer::Field::Name {name: v.to_string()}
+                            }
+
+                            converter(&#ident)
+                        }
+                    }
+                }
             }
         },
         Token::Specifier(specifier) => {
@@ -132,7 +144,7 @@ pub fn perm_expr(input: TokenStream) -> TokenStream {
     let output = parse_macro_input!(input as Expr);
     let token_content = expr_to_token(output);
     let expanded = quote! {
-        ::permission_check::ComplexCheck::new(::std::boxed::Box::new(|var| #token_content))
+        ::permission_check::ComplexCheck::new(::std::boxed::Box::new(move |var| #token_content))
     };
     expanded.into()
 }

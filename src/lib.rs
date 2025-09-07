@@ -38,10 +38,11 @@ pub fn check_one(require: &PermissionItem, permission: &PermissionItem) -> bool 
         let field_required = require.perm[idx_left].clone();
         let field_permission = permission.perm[idx_right].clone();
         if match_left_triple_glob {
-            if field_permission != tokenizer::Field::DoubleGlob
-                && field_permission != tokenizer::Field::TripleGlob
-            {
-                return false;
+            match field_permission {
+                tokenizer::Field::DoubleGlob | tokenizer::Field::TripleGlob => {}
+                _ => {
+                    return false;
+                }
             }
         }
         if !match_left_triple_glob {

@@ -3,7 +3,7 @@ use crate::{token, tokenizer::{self}, Expr};
 use regex::Regex;
 use std::{sync::LazyLock};
 use syn::{
-    ext::IdentExt, parse::{Parse, ParseStream}, parse_str, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token
+    ext::IdentExt, parse::{Parse, ParseStream}, parse_str, punctuated::Punctuated, spanned::Spanned, Ident, Lit, LitInt, Token, braced
 };
 use proc_macro2::Span;
 
@@ -38,6 +38,7 @@ pub enum Permission {
     SingleGlob(Span),
     ID(Span, LitInt),
     Name(Span, String),
+    VarName(Span, Ident)
 }
 
 impl Permission {
@@ -55,7 +56,8 @@ impl Permission {
             Permission::SingleGlob(span) => *span,
             Permission::ID(span, _) => *span,
             Permission::Name(span, _) => *span,
-            Permission::Enact(span) => *span
+            Permission::Enact(span) => *span,
+            Permission::VarName(span, _) => *span,
         }
     }
 
@@ -74,12 +76,19 @@ impl Permission {
             Permission::SingleGlob(_) => "*",
             Permission::ID(_, _) => "custom_id",
             Permission::Name(_, _) => "custom_name",
+            Permission::VarName(_, _) => "{var}"
         }
     }
 }
 
 impl Parse for Permission {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+        if input.peek(syn::token::Brace) {
+            let content;
+            braced!(content in input);
+            let parsed: Ident = content.parse()?;
+            return Ok(Permission::VarName(parsed.span(), parsed));
+        }
         if input.peek(token::TripleGlob) {
             let r = input.parse::<token::TripleGlob>()?;
             return Ok(Permission::TripleGlob(r.span()));
@@ -244,7 +253,7 @@ pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>
         .map(|permission| {
             Ok(match permission {
                 Permission::ID(_, i) => tokenizer::Field::ID {
-                    id: i.base10_parse::<i64>()?,
+                    id: i.base10_parse::<u64>()?,
                 },
                 Permission::Name(_, name) => tokenizer::Field::Name { name: name.to_string() },
                 Permission::Add(_) => tokenizer::ListSpecifier::Add.into(),
@@ -258,6 +267,7 @@ pub fn token_converter(permissions: Permissions) -> Result<Vec<tokenizer::Field>
                 Permission::SingleGlob(_) => tokenizer::Field::Glob,
                 Permission::DoubleGlob(_) => tokenizer::Field::DoubleGlob,
                 Permission::TripleGlob(_) => tokenizer::Field::TripleGlob,
+                Permission::VarName(span, ident) => tokenizer::Field::VarKind(*span, ident.clone())
             })
         })
         .collect();
