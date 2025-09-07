@@ -73,4 +73,22 @@ fn test_1() {
         ]),
         true
     );
+    let org_id = 1047;
+    let user_id = 243;
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.{org_id}.user.{user_id}.read),
+            perm_parser!(org.{org_id}.user.{user_id}.write)
+        ]),
+        true
+    );
+    let org_id = 1047;
+    let user_id = 244;
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.{org_id}.user.{user_id}.read),
+            perm_parser!(org.{org_id}.user.{user_id}.write)
+        ]),
+        false
+    );
 }

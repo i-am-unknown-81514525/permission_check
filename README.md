@@ -31,7 +31,7 @@ The permission system is scoped, and seperated with `.` with a few rules
 
 For the permission to match the requirement, the permission must perfectly encapsulate all specified requirement (which therefore, if globbing is used in the requirement, it would only be true **IF** the corresponding globbing is qualified in the permission)
 
-You can use `check_expr` to check a more complex permission required, where you can use `|`, `&`, `^`, `!` and `()` to define what is required (check usage in `src/tests/test_expr.rs`), and you can use `permission_macro` to build-time permission checking (as seen from below)
+You can use `check_expr` to check a more complex permission required, where you can use `|`, `&`, `^`, `!` and `()` to define what is required (check usage in `src/tests/test_expr.rs`), and you can use `permission_macro` to build-time permission checking (as seen from below) and variable encapsulation
 
 Example:
 ```rs
@@ -52,12 +52,69 @@ fn test_1() {
     assert_eq!(checker.with_perm(perm_parser!(*)), true);
     assert_eq!(checker.with_perm(perm_parser!(org.1047)), true);
     assert_eq!(checker.with_perm(perm_parser!(org.1048)), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.243.read)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.243.read), perm_parser!(org.1047.user.243.write)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.read)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.read_one)]), true);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.user.write), perm_parser!(org.1047.user.assign)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.role.owner), perm_parser!(user.blacklist.enact)]), false);
-    assert_eq!(checker.with_perm(vec![perm_parser!(org.1047.role.owner), perm_parser!(user.blacklist.***)]), true);
+    assert_eq!(
+        checker.with_perm(vec![perm_parser!(org.1047.user.243.read)]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.243.read),
+            perm_parser!(org.1047.user.243.write)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.read)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.read_one)
+        ]),
+        true
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.user.write),
+            perm_parser!(org.1047.user.assign)
+        ]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.role.owner),
+            perm_parser!(user.blacklist.enact)
+        ]),
+        false
+    );
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.1047.role.owner),
+            perm_parser!(user.blacklist.***)
+        ]),
+        true
+    );
+    let org_id = 1047;
+    let user_id = 243;
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.{org_id}.user.{user_id}.read),
+            perm_parser!(org.{org_id}.user.{user_id}.write)
+        ]),
+        true
+    );
+    let org_id = 1047;
+    let user_id = 244;
+    assert_eq!(
+        checker.with_perm(vec![
+            perm_parser!(org.{org_id}.user.{user_id}.read),
+            perm_parser!(org.{org_id}.user.{user_id}.write)
+        ]),
+        false
+    );
 }
 ```

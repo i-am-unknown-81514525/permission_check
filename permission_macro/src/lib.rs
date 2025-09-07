@@ -42,7 +42,11 @@ fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
                     {
                         #[inline(always)]
                         fn converter<T: ::std::string::ToString>(v: &T) -> ::permission_parser::tokenizer::Field {
-                            ::permission_parser::tokenizer::Field::Name {name: v.to_string()}
+                            let content =  v.to_string();
+                            match content.parse::<u64>() {
+                                Ok(value) => ::permission_parser::tokenizer::Field::ID {id: value},
+                                Err(_) => ::permission_parser::tokenizer::Field::Name {name: content}
+                            }
                         }
 
                         converter(&#ident)

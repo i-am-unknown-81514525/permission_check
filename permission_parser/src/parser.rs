@@ -242,7 +242,8 @@ impl Parse for Permissions {
                 Permission::Name(_, _)
                 | Permission::ID(_, _)
                 | Permission::SingleGlob(_)
-                | Permission::DoubleGlob(_) => {}
+                | Permission::DoubleGlob(_) 
+                | Permission::VarName(_, _, ) => {}
                 specifier @ _ => {
                     is_terminated = match specifier {
                         Permission::Add(span)
