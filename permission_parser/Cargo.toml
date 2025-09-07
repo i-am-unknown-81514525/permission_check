@@ -1,6 +1,6 @@
 [package]
 name = "permission_parser"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 repository = "https://github.com/i-am-unknown-81514525/permission_check"
 description = "Sub-crate of `permission_check` which provide core functionality for `permission_check` and `permission_macro`, and not meant to use indivdually."
