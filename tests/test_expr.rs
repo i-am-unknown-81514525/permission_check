@@ -79,3 +79,12 @@ fn test_expr() -> Result<(), PermissionParseError> {
     );
     Ok(())
 }
+
+#[test]
+fn test_var_kind_err() {
+    assert_eq!(parse(&"user.blacklist.***".to_string()).is_err(), false);
+    assert_eq!(parse(&"user.blacklist.{user_id}".to_string()).is_err(), true);
+    assert_eq!(expr_parse(
+        &"((org.1047.role.admin.enact | org.1047.role.owner.enact) | (org.1047.user.write && (org.1047.user.read | org.1047.user.read_one)) | (org.1047.user.243.read && org.1047.user.243.write)) &
+        !(user.blacklist.enact & !user.blacklist.{user_id})".to_string()).is_err(), true);
+}
