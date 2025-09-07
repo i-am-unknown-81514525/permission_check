@@ -316,13 +316,13 @@ pub fn token_converter(
     return Ok(parse_result?);
 }
 
-fn parse_internal(permission: &String) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
+fn parse_internal(permission: &str) -> Result<Vec<tokenizer::Field>, PermissionParseError> {
     // if !match_strings(permission) {
     //     return Err(PermissionParseError::InvalidOutput(
     //         "The given permission string does not match the required format".to_string(),
     //     ));
     // }
-    let result: Permissions = syn::parse_str(&permission)?;
+    let result: Permissions = syn::parse_str(permission)?;
 
     return token_converter(result);
 }
@@ -402,7 +402,7 @@ impl Clone for PermissionGroup {
     }
 }
 
-pub fn parse(permission: &String) -> Result<PermissionItem, PermissionParseError> {
+pub fn parse(permission: &str) -> Result<PermissionItem, PermissionParseError> {
     Ok(parse_internal(permission)?
         .iter()
         .map(|field| match field {
@@ -462,7 +462,7 @@ impl ItemExpr {
     }
 }
 
-pub fn expr_parse(expr: &String) -> Result<ItemExpr, PermissionParseError> {
+pub fn expr_parse(expr: &str) -> Result<ItemExpr, PermissionParseError> {
     let result: Expr = parse_str(expr)?;
     return ItemExpr::from_expr(result);
 }
