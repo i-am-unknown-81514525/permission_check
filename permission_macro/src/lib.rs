@@ -38,6 +38,7 @@ fn enum_to_token(parsed_enum: Token) -> impl ToTokens {
                     quote_spanned! {
                         span => 
                         {
+                            #[inline(always)]
                             fn converter<T: ::std::string::ToString>(v: &T) -> ::permission_parser::tokenizer::Field {
                                 ::permission_parser::tokenizer::Field::Name {name: v.to_string()}
                             }
