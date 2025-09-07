@@ -295,6 +295,14 @@ impl From<Vec<tokenizer::Field>> for PermissionItem {
     }
 }
 
+impl ToString for PermissionItem {
+    fn to_string(&self) -> String {
+        return self.perm.iter().map(|field| {
+            field.to_string()
+        }).collect::<Vec<String>>().join(".");
+    }
+}
+
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PermissionGroup {
     pub perms: Vec<PermissionItem>,
