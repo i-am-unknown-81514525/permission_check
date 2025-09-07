@@ -2,6 +2,11 @@
 name = "permission_macro"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/i-am-unknown-81514525/permission_check"
+authors = ["i-am-unknown-81514525" ]
+license-file = "LICENSE"
+description = "A sub-crate of `permission_check`, which is used to provide more extensive support for build-time checking of permissions."
+
 
 [lib]
 proc-macro = true

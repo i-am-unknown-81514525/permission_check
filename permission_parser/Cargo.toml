@@ -2,6 +2,10 @@
 name = "permission_parser"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/i-am-unknown-81514525/permission_check"
+description = "Sub-crate of `permission_check` which provide core functionality for `permission_check` and `permission_macro`, and not meant to use indivdually."
+authors = ["i-am-unknown-81514525" ]
+license-file = "LICENSE"
 
 [dependencies]
 regex = "1.11.2"

@@ -1,5 +1,5 @@
 # permission_check
-Check for user permission base on scope based permission system
+A relatively flexible permission checking library written in rust which checks for permission is scope (like: org.1028.user.*.write), with macro for compile time type checking and code generation
 
 ### How does the permission system work?
 The permission system is scoped, and seperated with `.` with a few rules
