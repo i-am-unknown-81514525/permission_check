@@ -6,6 +6,7 @@ repository = "https://github.com/i-am-unknown-81514525/permission_check"
 authors = ["i-am-unknown-81514525" ]
 license-file = "LICENSE"
 description = "A relatively flexible permission checking library written in rust which checks for permission is scope (like: org.1028.user.*.write), with macro for compile time type checking and code generation"
+readme = "README.md"
 
 [workspace]
 members = [

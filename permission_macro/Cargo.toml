@@ -6,7 +6,7 @@ repository = "https://github.com/i-am-unknown-81514525/permission_check"
 authors = ["i-am-unknown-81514525" ]
 license-file = "LICENSE"
 description = "A sub-crate of `permission_check`, which is used to provide more extensive support for build-time checking of permissions."
-
+readme = "README.md"
 
 [lib]
 proc-macro = true
