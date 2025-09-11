@@ -138,7 +138,7 @@ impl Parse for Permission {
         }
         if input.peek(token::enact) {
             let r = input.parse::<token::enact>()?;
-            return Ok(Permission::Assign(r.span()));
+            return Ok(Permission::Enact(r.span()));
         }
         if input.peek(LitInt) {
             let state = input.fork();
